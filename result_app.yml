@@ -1,0 +1,50 @@
+trigger:
+  paths:
+    include:
+    - result/*
+resources:
+  repositories:
+  - repository: self
+pool:
+  name: 'azureagent'
+variables:
+- name: dockerRegistryServiceConnection
+  value: '9b431a0c-87f8-41c4-a944-d50a6005ca8f'
+- name: imageRepository
+  value: 'resultapp'
+- name: containerRegistry
+  value: 'vibithaaazurecicd.azurecr.io'
+- name: dockerfilePath
+  value: '$(Build.SourcesDirectory)/result/Dockerfile'
+- name: tag
+  value: '$(Build.BuildId)'
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - task: Docker@2
+      displayName: Build an image to container registry
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageRepository)'
+        command: 'build'
+        Dockerfile: 'result/Dockerfile'
+        tags: '$(tag)'
+- stage: Push
+  displayName: Push
+  jobs:
+  - job: Push
+    displayName: Push
+    steps:
+    - task: Docker@2
+      displayName: Push an image to container registry
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageRepository)'
+        command: 'push'
+        Dockerfile: 'result/Dockerfile'
+        tags: '$(tag)'
+
