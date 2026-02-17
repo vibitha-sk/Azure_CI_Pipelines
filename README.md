@@ -14,6 +14,7 @@ into Azure DevOps where automated pipelines were built for microservices of the 
 - Integrate the VM with Azure DevOps by adding it as a self-hosted agent in an Agent Pool.
 
 ### Setup Architecture & Overview
+![architecture setup](images/architectureSetup.jpg)
 
 
 
@@ -32,7 +33,8 @@ into Azure DevOps where automated pipelines were built for microservices of the 
    for each microservice and pushes them to Azure Container Registry (ACR).
 
 ### Pipeline Demonstrations
-
+![demo](images/demo1.png)
+![demo2](images/demo2.png)
 
 
 
