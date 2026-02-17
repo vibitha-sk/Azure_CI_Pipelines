@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Azure CI/CD — Example Voting App</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f0f4fa;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 32px;
+      color: #1a1d23;
+    }
+
+    /* ─── Page Header ─────────────────────────────── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .page-header h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+
+    .page-header p {
+      font-size: 0.78rem;
+      color: #8898aa;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ─── Main canvas ─────────────────────────────── */
+    .canvas {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    /* ─── Zone (bordered region) ──────────────────── */
+    .zone {
+      border-radius: 16px;
+      padding: 24px 20px;
+      border: 1.5px solid;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .zone-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .zone-icon {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .zone-title {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      line-height: 1.3;
+    }
+
+    .zone-subtitle {
+      font-size: 0.58rem;
+      font-weight: 400;
+      opacity: 0.6;
+      letter-spacing: 0;
+      text-transform: none;
+      margin-top: 2px;
+    }
+
+    /* ─── Zone colours ────────────────────────────── */
+    .zone-github {
+      background: #f8fafc;
+      border-color: #cbd5e0;
+      width: 196px;
+    }
+
+    /* CHANGED: Purple tones -> Azure Blue tones */
+    .zone-devops {
+      background: #f0f8ff;
+      border-color: #90caf9;
+      flex: 1;
+      min-width: 600px;
+    }
+
+    .zone-acr {
+      background: #f0faf9;
+      border-color: #81c7be;
+      width: 196px;
+    }
+
+    .zone-github .zone-title {
+      color: #2d3748;
+    }
+
+    /* CHANGED: Purple tones -> Azure Blue tones */
+    .zone-devops .zone-title {
+      color: #0078d4;
+    }
+
+    .zone-acr .zone-title {
+      color: #00695c;
+    }
+
+    /* ─── Service node ────────────────────────────── */
+    .node {
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 11px 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .node-icon {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .node-name {
+      font-size: 0.71rem;
+      font-weight: 600;
+      color: #1a1d23;
+      line-height: 1.3;
+    }
+
+    .node-detail {
+      font-size: 0.59rem;
+      color: #718096;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    /* ─── Small vertical connector ────────────────── */
+    .v-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 7px 0;
+    }
+
+    .v-line {
+      width: 1.5px;
+      height: 16px;
+      background: #bec8d6;
+    }
+
+    .v-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #bec8d6;
+    }
+
+    /* ─── Horizontal connector between zones ──────── */
+    .h-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      gap: 5px;
+      flex-shrink: 0;
+      width: 76px;
+    }
+
+    .h-arrow-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 14px;
+      /* Fixed height for SVG alignment */
+    }
+
+    /* Removed CSS border arrow hacks, using SVG now */
+    .h-label {
+      font-size: 0.57rem;
+      color: #8898aa;
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    /* ─── DevOps inner layout ─────────────────────── */
+    .devops-body {
+      display: flex;
+      gap: 22px;
+      align-items: flex-start;
+    }
+
+    .devops-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      width: 186px;
+      flex-shrink: 0;
+    }
+
+    .devops-right {
+      flex: 1;
+    }
+
+    /* ─── Pipelines sub-panel ─────────────────────── */
+    .pipelines-panel {
+      /* CHANGED: Purple dashed -> Blue dashed */
+      border: 1.5px dashed #90caf9;
+      border-radius: 12px;
+      padding: 16px 16px 14px;
+      background: #f8fbff;
+      /* lighter blue tint */
+    }
+
+    .pipelines-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .pipelines-title {
+      font-size: 0.63rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      /* CHANGED: Purple text -> Azure Blue text */
+      color: #0078d4;
+    }
+
+    .pipelines-sub {
+      font-size: 0.57rem;
+      color: #8898aa;
+      font-family: 'JetBrains Mono', monospace;
+      margin-left: auto;
+    }
+
+    /* ─── Pipeline row ────────────────────────────── */
+    .pipeline-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .pipeline-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .pipe-label {
+      font-size: 0.59rem;
+      font-weight: 600;
+      /* CHANGED: Purple style -> Azure Blue style */
+      color: #0078d4;
+      font-family: 'JetBrains Mono', monospace;
+      background: #e6f2fb;
+      border-radius: 4px;
+      padding: 3px 7px;
+      width: 54px;
+      text-align: center;
+      flex-shrink: 0;
+      border: 1px solid #b3d6f2;
+    }
+
+    .pipe-step {
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.61rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #2d3748;
+      white-space: nowrap;
+      flex: 1;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .pipe-step.trigger {
+      border-color: #f6ad55;
+      background: #fffaf0;
+      color: #744210;
+    }
+
+    .pipe-step.build {
+      border-color: #63b3ed;
+      background: #ebf8ff;
+      color: #1a365d;
+    }
+
+    .pipe-step.push {
+      border-color: #68d391;
+      background: #f0fff4;
+      color: #1c4532;
+    }
+
+    /* Replaced CSS arrow with SVG */
+    .pipe-arrow-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Agent badge ─────────────────────────────── */
+    .agent-badge {
+      background: #fffbeb;
+      border: 1.5px solid #f6d860;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.59rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #744210;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .agent-badge strong {
+      display: block;
+      font-size: 0.62rem;
+      color: #5a3600;
+      margin-bottom: 2px;
+    }
+
+    /* ─── Gap between left col items ──────────────── */
+    .gap10 {
+      height: 10px;
+    }
+
+    /* ─── ACR image tags ──────────────────────────── */
+    .acr-tags {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .acr-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1.5px solid #81c7be;
+      border-radius: 7px;
+      padding: 7px 11px;
+      font-size: 0.62rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #00695c;
+    }
+
+    .acr-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #68d391;
+      flex-shrink: 0;
+    }
+
+    /* ─── Legend ──────────────────────────────────── */
+    .legend-strip {
+      display: flex;
+      justify-content: center;
+      gap: 26px;
+      margin-top: 36px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.61rem;
+      color: #718096;
+    }
+
+    .legend-swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page-header">
+    <h1>Azure CI/CD Pipeline</h1>
+    <p>example-voting-app · Three service pipelines · Self-hosted agent</p>
+  </div>
+
+  <div class="canvas">
+
+    <!-- ═══════════════════════════════
+       ZONE 1 · GitHub / Developer
+  ════════════════════════════════════ -->
+    <div class="zone zone-github">
+
+      <div class="zone-header">
+        <div class="zone-icon">
+          <!-- GitHub official SVG mark -->
+          <svg width="30" height="30" viewBox="0 0 98 96" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd"
+              d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"
+              fill="#24292e" />
+          </svg>
+        </div>
+        <div>
+          <div class="zone-title">Developer</div>
+          <div class="zone-subtitle">GitHub source</div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="node-icon">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="7" r="4" />
+            <path d="M5.5 20a7 7 0 0 1 13 0" />
+          </svg>
+        </div>
+        <div>
+          <div class="node-name">Developer</div>
+          <div class="node-detail">writes &amp; commits</div>
+        </div>
+      </div>
+
+      <div class="v-connector">
+        <div class="v-line"></div>
+        <div class="v-dot"></div>
+        <div class="v-line"></div>
+      </div>
+
+      <div class="node">
+        <div class="node-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="18" r="3" />
+            <circle cx="6" cy="6" r="3" />
+            <circle cx="6" cy="18" r="3" />
+            <path d="M6 9v6M18 9V7a2 2 0 0 0-2-2H8" />
+          </svg>
+        </div>
+        <div>
+          <div class="node-name">GitHub Repo</div>
+          <div class="node-detail">example-voting-app</div>
+        </div>
+      </div>
+
+    </div><!-- /zone-github -->
+
+
+    <!-- ── Connector 1 ── -->
+    <div class="h-connector">
+      <div class="h-arrow-wrap">
+        <!-- Replaced CSS arrow with SVG -->
+        <svg width="60" height="12" viewBox="0 0 60 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="0" y1="6" x2="54" y2="6" stroke="#8898aa" stroke-width="1.5" />
+          <path d="M54 6L48 2.5V9.5Z" fill="#8898aa" />
+        </svg>
+      </div>
+      <div class="h-label">clone &amp;<br />import</div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+       ZONE 2 · Azure DevOps
+  ════════════════════════════════════ -->
+    <div class="zone zone-devops">
+
+      <div class="zone-header">
+        <div class="zone-icon">
+          <!-- Azure DevOps official SVG — benc-uk/icon-collection -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" width="34" height="34">
+            <defs>
+              <linearGradient id="g-devops" x1="9" y1="16.97" x2="9" y2="1.03" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#0078d4" />
+                <stop offset=".16" stop-color="#1380da" />
+                <stop offset=".53" stop-color="#3c91e5" />
+                <stop offset=".82" stop-color="#559cec" />
+                <stop offset="1" stop-color="#5ea0ef" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M17 4v9.74l-4 3.28-6.2-2.26V17l-3.51-4.59 10.23.8V4.44zm-3.41.49L7.85 1v2.29L2.58 4.84 1 6.87v4.61l2.26 1V6.57z"
+              fill="url(#g-devops)" />
+          </svg>
+        </div>
+        <div>
+          <div class="zone-title">Azure DevOps</div>
+          <div class="zone-subtitle">Repos · Pipelines · Self-hosted agent pool</div>
+        </div>
+      </div>
+
+      <div class="devops-body">
+
+        <!-- LEFT · Repos + Agent -->
+        <div class="devops-left">
+
+          <div class="node">
+            <div class="node-icon">
+              <!-- Azure Repos — official icon from Microsoft Azure icon set -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 49 49" width="26" height="26">
+                <path d="M36.7.02H11.789c-.96 0-1.733.772-1.733 1.733v5.676h28.38V1.753A1.733 1.733 0 0036.7.02z"
+                  fill="#BC3200" />
+                <path
+                  d="M39.634 3.488H8.858a2.503 2.503 0 00-2.506 2.506v1.972H42.14V5.994a2.503 2.503 0 00-2.506-2.506z"
+                  fill="#D13600" />
+                <path
+                  d="M43.24 7.043H5.252a2.503 2.503 0 00-2.506 2.506v35.68a2.52 2.52 0 002.516 2.516H43.23a2.52 2.52 0 002.516-2.516V9.549a2.503 2.503 0 00-2.506-2.506z"
+                  fill="#E15815" />
+                <path
+                  d="M15.435 10.719a4.777 4.777 0 00-4.775 4.774 4.777 4.777 0 004.775 4.775 4.777 4.777 0 004.774-4.775 4.777 4.777 0 00-4.774-4.774zm0 7.865a3.099 3.099 0 01-3.1-3.1 3.098 3.098 0 013.1-3.101c1.713 0 3.1 1.387 3.1 3.1 0 1.714-1.387 3.1-3.1 3.1z"
+                  fill="#FFB290" />
+                <path d="M17.228 19.75H13.69v9.678h3.537V19.75z" fill="#FFB290" />
+                <path
+                  d="M38.11 15.56a4.777 4.777 0 00-4.774-4.775 4.777 4.777 0 00-4.775 4.775 4.78 4.78 0 003.061 4.457v3.279l-17.929 5.923h-.03v6.072a4.776 4.776 0 00-2.991 4.428 4.777 4.777 0 004.774 4.775 4.777 4.777 0 004.775-4.775 4.788 4.788 0 00-2.922-4.408v-3.764l17.83-5.894-.04-.069h.04v-5.607a4.768 4.768 0 002.981-4.417zM18.537 39.73c0 1.713-1.387 3.1-3.1 3.1a3.099 3.099 0 01-3.101-3.1 3.099 3.099 0 013.1-3.101c1.714 0 3.1 1.387 3.1 3.1zm14.799-21.08a3.099 3.099 0 01-3.1-3.1c0-1.714 1.386-3.1 3.1-3.1 1.713 0 3.1 1.386 3.1 3.1 0 1.713-1.397 3.1-3.1 3.1z"
+                  fill="#FFDBCA" />
+              </svg>
+            </div>
+            <div>
+              <div class="node-name">Azure Repos</div>
+              <div class="node-detail">Git · 3 path triggers</div>
+            </div>
+          </div>
+
+          <div class="gap10"></div>
+
+          <div class="agent-badge">
+            <strong>Self-hosted Agent</strong>
+            Linux VM · Docker<br />Pipelines agent
+          </div>
+
+        </div><!-- /devops-left -->
+
+
+        <!-- RIGHT · Pipelines panel -->
+        <div class="devops-right">
+          <div class="pipelines-panel">
+
+            <div class="pipelines-header">
+              <div style="width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                <!-- Azure Pipelines — official icon from Microsoft Azure icon set -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 49 49" width="20" height="20">
+                  <path
+                    d="M16.769 42.094l6.492 6.492h10.536a2.317 2.317 0 002.316-2.316V21.934L16.769 41.29a.558.558 0 000 .804z"
+                    fill="#235DC1" />
+                  <path
+                    d="M.246 15.039v10.536l6.492 6.492a.558.558 0 00.804 0L26.898 12.71H2.562a2.328 2.328 0 00-2.316 2.328z"
+                    fill="#3B6EC6" />
+                  <path
+                    d="M24.606 3.241L8.982 27.145a2.05 2.05 0 00.264 2.568L19.254 39.72a2.052 2.052 0 002.568.264l23.903-15.636a5.394 5.394 0 002.436-4.512V3.169A2.381 2.381 0 0045.785.793H29.13a5.426 5.426 0 00-4.524 2.448z"
+                    fill="#5D8DE4" />
+                  <path d="M3.762 45.3v-8.448H.246v11.784H12.21v-3.337H3.762z" fill="#9FBBF0" />
+                  <path d="M36.17 18.502a5.952 5.952 0 100-11.904 5.952 5.952 0 000 11.904z" fill="#ADC5F2" />
+                  <path d="M25.517 20.526L12.789 33.254l2.936 2.936 12.728-12.728-2.936-2.936z" fill="#6C9AEE" />
+                  <path d="M13.19 38.724l2.529-2.529-2.936-2.936-2.529 2.529 2.936 2.936z" fill="#88ACEF" />
+                </svg>
+              </div>
+              <span class="pipelines-title">Azure Pipelines CI</span>
+              <span class="pipelines-sub">YAML · triggered on push</span>
+            </div>
+
+            <!-- vote/ -->
+            <div class="pipeline-row">
+              <div class="pipe-label">vote/</div>
+              <div class="pipe-step trigger">path trigger</div>
+              <div class="pipe-arrow-container">
+                <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+                  <line x1="0" y1="6" x2="10" y2="6" stroke="#bec8d6" stroke-width="1.5" />
+                  <path d="M10 6L6 3.5V8.5Z" fill="#bec8d6" />
+                </svg>
+              </div>
+              <div class="pipe-step build">docker build</div>
+              <div class="pipe-arrow-container">
+                <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+                  <line x1="0" y1="6" x2="10" y2="6" stroke="#bec8d6" stroke-width="1.5" />
+                  <path d="M10 6L6 3.5V8.5Z" fill="#bec8d6" />
+                </svg>
+              </div>
+              <div class="pipe-step push">push → ACR</div>
+            </div>
+
+            <!-- worker/ -->
+            <div class="pipeline-row">
+              <div class="pipe-label">worker/</div>
+              <div class="pipe-step trigger">path trigger</div>
+              <div class="pipe-arrow-container">
+                <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+                  <line x1="0" y1="6" x2="10" y2="6" stroke="#bec8d6" stroke-width="1.5" />
+                  <path d="M10 6L6 3.5V8.5Z" fill="#bec8d6" />
+                </svg>
+              </div>
+              <div class="pipe-step build">docker build</div>
+              <div class="pipe-arrow-container">
+                <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+                  <line x1="0" y1="6" x2="10" y2="6" stroke="#bec8d6" stroke-width="1.5" />
+                  <path d="M10 6L6 3.5V8.5Z" fill="#bec8d6" />
+                </svg>
+              </div>
+              <div class="pipe-step push">push → ACR</div>
+            </div>
+
+            <!-- result/ -->
+            <div class="pipeline-row">
+              <div class="pipe-label">result/</div>
+              <div class="pipe-step trigger">path trigger</div>
+              <div class="pipe-arrow-container">
+                <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+                  <line x1="0" y1="6" x2="10" y2="6" stroke="#bec8d6" stroke-width="1.5" />
+                  <path d="M10 6L6 3.5V8.5Z" fill="#bec8d6" />
+                </svg>
+              </div>
+              <div class="pipe-step build">docker build</div>
+              <div class="pipe-arrow-container">
+                <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+                  <line x1="0" y1="6" x2="10" y2="6" stroke="#bec8d6" stroke-width="1.5" />
+                  <path d="M10 6L6 3.5V8.5Z" fill="#bec8d6" />
+                </svg>
+              </div>
+              <div class="pipe-step push">push → ACR</div>
+            </div>
+
+          </div><!-- /pipelines-panel -->
+
+          <div
+            style="margin-top:8px;padding-left:4px;font-size:0.56rem;font-family:'JetBrains Mono',monospace;color:#a0aec0;">
+            voting_app.yml &nbsp;·&nbsp; worker_service.yml &nbsp;·&nbsp; result_app.yml
+          </div>
+
+        </div><!-- /devops-right -->
+
+      </div><!-- /devops-body -->
+
+    </div><!-- /zone-devops -->
+
+
+    <!-- ── Connector 2 ── -->
+    <div class="h-connector">
+      <div class="h-arrow-wrap">
+        <!-- Replaced CSS arrow with SVG -->
+        <svg width="60" height="12" viewBox="0 0 60 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="0" y1="6" x2="54" y2="6" stroke="#8898aa" stroke-width="1.5" />
+          <path d="M54 6L48 2.5V9.5Z" fill="#8898aa" />
+        </svg>
+      </div>
+      <div class="h-label">push<br />images</div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+       ZONE 3 · Azure Container Registry
+  ════════════════════════════════════ -->
+    <div class="zone zone-acr">
+
+      <div class="zone-header">
+        <div class="zone-icon">
+          <!-- Azure Container Registry official SVG — benc-uk/icon-collection -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" width="34" height="34">
+            <defs>
+              <linearGradient id="g-acr" x1="8.637" y1="-1.991" x2="8.637" y2="16.739" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#5ea0ef" />
+                <stop offset="1" stop-color="#0078d4" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M7.43 8.178l2.589-1.573 7.255 2.731A3.664 3.664 0 0016.23 7.49l-.01-.05A4.194 4.194 0 0014 6.32a4.91 4.91 0 00-5.1-4.7 5.071 5.071 0 00-4.84 3.29A4.621 4.621 0 000 9.39a4.73 4.73 0 004.89 4.54h2.54z"
+              fill="url(#g-acr)" />
+            <path fill="#767676" d="M10.07 7.159l.01 4.28 7.91 1.68v-2.98l-7.92-2.98z" />
+            <path fill="#999" d="M10.07 7.159l-2.14 1.3v3.98l2.15-1" />
+            <path fill="#a3a3a3"
+              d="M13.68 11.499l.72.2v-2.33l-.72-.25v2.38zM12.96 8.889l-.72-.26v2.49l.72.2v-2.43zM15.12 11.889l.7.19.02-2.22-.72-.27v2.3zM16.55 12.199l.7.16.02-2.09-.72-.28v2.21z" />
+          </svg>
+        </div>
+        <div>
+          <div class="zone-title">Container<br />Registry</div>
+          <div class="zone-subtitle">Private image store</div>
+        </div>
+      </div>
+
+      <div class="acr-tags">
+        <div class="acr-tag">
+          <div class="acr-dot"></div>vote:latest
+        </div>
+        <div class="acr-tag">
+          <div class="acr-dot"></div>worker:latest
+        </div>
+        <div class="acr-tag">
+          <div class="acr-dot"></div>result:latest
+        </div>
+      </div>
+
+    </div><!-- /zone-acr -->
+
+  </div><!-- /canvas -->
+
+
+  <!-- ─── Legend ──────────────────────────────────── -->
+  <div class="legend-strip">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#fffaf0;border:1.5px solid #f6ad55;"></div>
+      Path trigger on push
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#ebf8ff;border:1.5px solid #63b3ed;"></div>
+      Docker image build
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#f0fff4;border:1.5px solid #68d391;"></div>
+      Push to registry
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#fffbeb;border:1.5px solid #f6d860;"></div>
+      Self-hosted Linux VM agent
+    </div>
+  </div>
+
+</body>
+
+</html>
